@@ -72,6 +72,7 @@ x = Thread.new do
                 $bot.send_message($options[:whoto], line)
 	        end
         end
+
         s.close
     end
 end
@@ -80,7 +81,22 @@ if $options[:debug] then
     puts "creating jabber connection now"
 end
 
-Jabber::debug = true
+# Jabber::debug = true
+
+subscription_callback = lambda { |item,pres|
+  name = pres.from
+  if item != nil && item.iname != nil
+    name = "#{item.iname} (#{pres.from})"
+  end
+  case pres.type
+    when :subscribe then puts("Subscription request from #{name}")
+    when :subscribed then puts("Subscribed to #{name}")
+    when :unsubscribe then puts("Unsubscription request from #{name}")
+    when :unsubscribed then puts("Unsubscribed from #{name}")
+    else raise "The Roster Helper is buggy!!! subscription callback with type=#{pres.type}"
+  end
+    $bot.set_presence(nil, "Waiting for socket tickling...")
+}
 
 # settings
 myJID = JID.new(config['myjid'])
@@ -98,5 +114,28 @@ class << $bot
 end
 
 $bot.set_presence(nil, "Waiting for socket tickling...")
+
+$bot.roster.add_update_callback { |olditem,item|
+  if [:from, :none].include?(item.subscription) && item.ask != :subscribe && item.jid == $options[:whoto]
+    if $options[:debug] then
+        puts("Subscribing to #{item.jid}")
+    end
+    item.subscribe
+  end
+}
+
+$bot.roster.add_subscription_callback(0, nil, &subscription_callback)
+
+$bot.roster.groups.each { |group|
+    $bot.roster.find_by_group(group).each { |item|
+        if [:from, :none].include?(item.subscription) && item.ask != :subscribe && item.jid == $options[:whoto] then
+            if $options[:debug] then
+                puts "subscribing to #{item.jid}"
+            end
+            item.subscribe
+        end
+    }
+}
+
 
 x.join

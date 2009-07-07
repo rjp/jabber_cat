@@ -1,5 +1,3 @@
-require 'rake'
-
 spec = Gem::Specification.new do |s| 
   s.name = "jabber_cat"
   s.version = "0.0.1"
@@ -8,7 +6,7 @@ spec = Gem::Specification.new do |s|
   s.homepage = "http://rjp.github.com/jabber_cat"
   s.platform = Gem::Platform::RUBY
   s.summary = "Simple Socket-to-Jabber gateway"
-  s.files = FileList["{bin,lib}/**/*"].to_a
+  s.files = ['bin/jabber_cat.rb']
   s.require_path = "lib"
   s.test_files = []
   s.has_rdoc = false

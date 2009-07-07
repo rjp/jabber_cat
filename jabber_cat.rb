@@ -89,7 +89,11 @@ myPassword = config['mypass']
 $bot = Jabber::Framework::Bot.new(myJID, myPassword)
 class << $bot
   def accept_subscription_from?(jid)
-    false
+    if jid == $options[:whoto] then
+        true
+    else
+        false
+    end
   end
 end
 

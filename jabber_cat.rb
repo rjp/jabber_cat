@@ -39,6 +39,11 @@ end
 # TODO handle failing here with exceptions
 config = YAML::load(open($options[:config]))
 
+# make sure we always have a filters list
+if config['filters'].nil? then
+    config['filters'] = []
+end
+
 if $options[:debug] then
     puts "listening to socket on #{$options[:host]}:#{$options[:port]}"
 end
@@ -46,16 +51,26 @@ server = TCPServer.new($options[:host], $options[:port])
 
 x = Thread.new do 
     loop do
+        ignore = nil
         s = server.accept
 	  	line = s.gets.chomp.gsub(/\r/,'')
-        if $options[:debug] then
-		    puts "got line [#{line}]"
-		    puts "sending it to #{$options[:whoto]}"
-        end
-        if $options[:debug] then
-            puts "<#{$options[:whoto]}> #{line}"
-        else
-    		$bot.send_message($options[:whoto], line)
+
+        config['filters'].each { |f|
+            if line =~ /#{f}/ then
+                ignore = true
+            end
+        }
+
+        if ignore.nil? then
+	        if $options[:debug] then
+			    puts "got line [#{line}]"
+			    puts "sending it to #{$options[:whoto]}"
+	        end
+	        if $options[:debug] then
+	            puts "<#{$options[:whoto]}> #{line}"
+	        else
+                $bot.send_message($options[:whoto], line)
+	        end
         end
         s.close
     end

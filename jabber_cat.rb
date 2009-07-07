@@ -9,7 +9,9 @@ $options = {
     :host => 'localhost',
     :port => 9999,
     :whoto => nil,
-    :config => ENV['HOME'] + '/.jabber_cat'
+    :config => ENV['HOME'] + '/.jabber_cat',
+    :verbose => nil,
+    :debug => 0
 }
 
 OptionParser.new do |opts|
@@ -30,10 +32,19 @@ OptionParser.new do |opts|
   opts.on("-c", "--config CONFIG", String, "config file") do |p|
     $options[:config] = p
   end
+
+  opts.on("-v", "--[no-]verbose", "Run verbosely") do |v|
+    $options[:verbose] = v
+  end
+
+  opts.on("-d", "--debug N", Integer, "debug level") do |p|
+    $options[:debug] = p
+  end
+
 end.parse!
 
-if $options[:whoto].nil? then
-    $options[:debug] = true
+if $options[:whoto].nil? then # debug = 1 if not already set
+    $options[:debug] = $options[:debug] || 1
 end
 
 # TODO handle failing here with exceptions
@@ -44,9 +55,10 @@ if config['filters'].nil? then
     config['filters'] = []
 end
 
-if $options[:debug] then
+if $options[:debug] > 0 then
     puts "listening to socket on #{$options[:host]}:#{$options[:port]}"
 end
+
 server = TCPServer.new($options[:host], $options[:port])
 
 x = Thread.new do 
@@ -57,16 +69,19 @@ x = Thread.new do
 
         config['filters'].each { |f|
             if line =~ /#{f}/ then
+                if $options[:verbose] then
+                    puts "[#{line}] filtered by [#{f}]"
+                end
                 ignore = true
             end
         }
 
         if ignore.nil? then
-	        if $options[:debug] then
+	        if $options[:debug] > 0 then
 			    puts "got line [#{line}]"
 			    puts "sending it to #{$options[:whoto]}"
 	        end
-	        if $options[:debug] then
+	        if $options[:debug] > 0 then
 	            puts "<#{$options[:whoto]}> #{line}"
 	        else
                 $bot.send_message($options[:whoto], line)
@@ -77,11 +92,13 @@ x = Thread.new do
     end
 end
 
-if $options[:debug] then
+if $options[:debug] > 0 then
     puts "creating jabber connection now"
 end
 
-# Jabber::debug = true
+if $options[:debug] > 1 then
+    Jabber::debug = true
+end
 
 subscription_callback = lambda { |item,pres|
   name = pres.from
@@ -117,7 +134,7 @@ $bot.set_presence(nil, "Waiting for socket tickling...")
 
 $bot.roster.add_update_callback { |olditem,item|
   if [:from, :none].include?(item.subscription) && item.ask != :subscribe && item.jid == $options[:whoto]
-    if $options[:debug] then
+    if $options[:debug] > 0 then
         puts("Subscribing to #{item.jid}")
     end
     item.subscribe
@@ -129,7 +146,7 @@ $bot.roster.add_subscription_callback(0, nil, &subscription_callback)
 $bot.roster.groups.each { |group|
     $bot.roster.find_by_group(group).each { |item|
         if [:from, :none].include?(item.subscription) && item.ask != :subscribe && item.jid == $options[:whoto] then
-            if $options[:debug] then
+            if $options[:debug] > 0 then
                 puts "subscribing to #{item.jid}"
             end
             item.subscribe

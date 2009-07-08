@@ -50,6 +50,10 @@ end
 # TODO handle failing here with exceptions
 config = YAML::load(open($options[:config]))
 
+unless config['options'].nil? then
+    $options.merge!(config['options'])
+end
+
 # make sure we always have a filters list
 if config['filters'].nil? then
     config['filters'] = []

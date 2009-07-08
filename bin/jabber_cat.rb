@@ -103,6 +103,12 @@ x = Thread.new do
     end
 end
 
+#### JABBER
+
+# settings
+myJID = JID.new(config['myjid'])
+myPassword = config['mypass']
+
 if $options[:debug] > 0 then
     puts "creating jabber connection now"
 end
@@ -111,59 +117,68 @@ if $options[:debug] > 1 then
     Jabber::debug = true
 end
 
-subscription_callback = lambda { |item,pres|
-  name = pres.from
-  if item != nil && item.iname != nil
-    name = "#{item.iname} (#{pres.from})"
-  end
-  case pres.type
-    when :subscribe then puts("Subscription request from #{name}")
-    when :subscribed then puts("Subscribed to #{name}")
-    when :unsubscribe then puts("Unsubscription request from #{name}")
-    when :unsubscribed then puts("Unsubscribed from #{name}")
-    else raise "The Roster Helper is buggy!!! subscription callback with type=#{pres.type}"
-  end
-    $bot.set_presence(nil, "Waiting for socket tickling...")
-}
-
-# settings
-myJID = JID.new(config['myjid'])
-myPassword = config['mypass']
-
-$bot = Jabber::Framework::Bot.new(myJID, myPassword)
-class << $bot
-  def accept_subscription_from?(jid)
-    if jid == $options[:whoto] then
-        true
-    else
-        false
-    end
-  end
-end
-
-$bot.set_presence(nil, "Waiting for socket tickling...")
-
-$bot.roster.add_update_callback { |olditem,item|
-  if [:from, :none].include?(item.subscription) && item.ask != :subscribe && item.jid == $options[:whoto]
-    if $options[:debug] > 0 then
-        puts("Subscribing to #{item.jid}")
-    end
-    item.subscribe
-  end
-}
-
-$bot.roster.add_subscription_callback(0, nil, &subscription_callback)
-
-$bot.roster.groups.each { |group|
-    $bot.roster.find_by_group(group).each { |item|
-        if [:from, :none].include?(item.subscription) && item.ask != :subscribe && item.jid == $options[:whoto] then
-            if $options[:debug] > 0 then
-                puts "subscribing to #{item.jid}"
-            end
-            item.subscribe
+if $options[:muc] then # can't distinguish MUC JID from normal JID
+    cl = Jabber::Client.new(Jabber::JID.new(myJID))
+    cl.connect
+    cl.auth(myPassword)
+    m = Jabber::MUC::SimpleMUCClient.new(cl)
+    class << m
+        def send_message(junk, body)
+            say(body)
         end
-    }
-}
+    end
+    m.join($options[:whoto])
+    $bot = m
+else
+	subscription_callback = lambda { |item,pres|
+	  name = pres.from
+	  if item != nil && item.iname != nil
+	    name = "#{item.iname} (#{pres.from})"
+	  end
+	  case pres.type
+	    when :subscribe then puts("Subscription request from #{name}")
+	    when :subscribed then puts("Subscribed to #{name}")
+	    when :unsubscribe then puts("Unsubscription request from #{name}")
+	    when :unsubscribed then puts("Unsubscribed from #{name}")
+	    else raise "The Roster Helper is buggy!!! subscription callback with type=#{pres.type}"
+	  end
+	    $bot.set_presence(nil, "Waiting for socket tickling...")
+	}
 
+	$bot = Jabber::Framework::Bot.new(myJID, myPassword)
+	class << $bot
+	  def accept_subscription_from?(jid)
+	    if jid == $options[:whoto] then
+	        true
+	    else
+	        false
+	    end
+	  end
+	end
+
+	$bot.set_presence(nil, "Waiting for socket tickling...")
+
+	$bot.roster.add_update_callback { |olditem,item|
+	  if [:from, :none].include?(item.subscription) && item.ask != :subscribe && item.jid == $options[:whoto]
+	    if $options[:debug] > 0 then
+	        puts("Subscribing to #{item.jid}")
+	    end
+	    item.subscribe
+	  end
+	}
+
+	$bot.roster.add_subscription_callback(0, nil, &subscription_callback)
+
+	$bot.roster.groups.each { |group|
+	    $bot.roster.find_by_group(group).each { |item|
+	        if [:from, :none].include?(item.subscription) && item.ask != :subscribe && item.jid == $options[:whoto] then
+	            if $options[:debug] > 0 then
+	                puts "subscribing to #{item.jid}"
+	            end
+	            item.subscribe
+	        end
+	    }
+	}
+end
 
 x.join

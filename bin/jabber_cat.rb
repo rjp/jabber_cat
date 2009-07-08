@@ -3,6 +3,7 @@ require 'optparse'
 require 'socket'
 require 'xmpp4r'
 require 'xmpp4r/framework/bot'
+require 'xmpp4r/muc/helper/simplemucclient'
 include Jabber
 
 $options = {
@@ -11,11 +12,12 @@ $options = {
     :whoto => nil,
     :config => ENV['HOME'] + '/.jabber_cat',
     :verbose => nil,
-    :debug => 0
+    :debug => 0,
+    :muc => nil
 }
 
 OptionParser.new do |opts|
-  opts.banner = "Usage: twittermoo.rb [-p port] [-h host] [-w jid]"
+  opts.banner = "Usage: twittermoo.rb [-p port] [-h host] [-w jid] [-m]"
 
   opts.on("-p", "--port N", Integer, "irccat port") do |p|
     $options[:port] = p
@@ -40,6 +42,11 @@ OptionParser.new do |opts|
   opts.on("-d", "--debug N", Integer, "debug level") do |p|
     $options[:debug] = p
   end
+
+  opts.on("-m", "--muc", "Treat the destination as a MUC") do |v|
+    $options[:muc] = v
+  end
+
 
 end.parse!
 

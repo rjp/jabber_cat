@@ -72,11 +72,14 @@ end
 
 server = TCPServer.new($options[:host], $options[:port])
 
-x = Thread.new do 
+x = Thread.new do
     loop do
         ignore = nil
         s = server.accept
 	  	line = s.gets.chomp.gsub(/\r/,'')
+        if $options[:verbose] then
+            puts "[#{line}] received"
+        end
 
         config['filters'].each { |f|
             if line =~ /#{f}/ then
@@ -88,7 +91,7 @@ x = Thread.new do
         }
 
         if ignore.nil? then
-	        if $options[:debug] > 0 then
+	        if $options[:verbose] then
 			    puts "got line [#{line}]"
 			    puts "sending it to #{$options[:whoto]}"
 	        end

@@ -101,9 +101,13 @@ x = Thread.new do
     end
 end
 
-if $options[:debug] > 0 then
-    puts "creating jabber connection now"
+# skip jabber entirely if we have high enough debugging
+if $options[:debug] > 3 then
+    x.join
+    exit
 end
+
+log "creating jabber connection now"
 
 if $options[:debug] > 1 then
     Jabber::debug = true

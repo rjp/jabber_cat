@@ -5,6 +5,12 @@ require 'xmpp4r'
 require 'xmpp4r/framework/bot'
 include Jabber
 
+def log(x)
+    if $options[:verbose] then
+        puts(*x)
+    end
+end
+
 $options = {
     :host => 'localhost',
     :port => 9999,
@@ -71,20 +77,19 @@ x = Thread.new do
         s = server.accept
 	  	line = s.gets.chomp.gsub(/\r/,'')
 
+	    log "R #{line}"
+
         config['filters'].each { |f|
             if line =~ /#{f}/ then
                 if $options[:verbose] then
-                    puts "[#{line}] filtered by [#{f}]"
+                    log "F #{f} =~ #{line}"
                 end
                 ignore = true
             end
         }
 
         if ignore.nil? then
-	        if $options[:debug] > 0 then
-			    puts "got line [#{line}]"
-			    puts "sending it to #{$options[:whoto]}"
-	        end
+            log "sending it to #{$options[:whoto]}"
 	        if $options[:debug] > 0 then
 	            puts "<#{$options[:whoto]}> #{line}"
 	        else

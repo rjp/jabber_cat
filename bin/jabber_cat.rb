@@ -17,7 +17,8 @@ $options = {
     :whoto => nil,
     :config => ENV['HOME'] + '/.jabber_cat',
     :verbose => nil,
-    :debug => 0
+    :debug => 0,
+    :keyfile => nil
 }
 
 OptionParser.new do |opts|
@@ -47,6 +48,10 @@ OptionParser.new do |opts|
     $options[:debug] = p
   end
 
+  opts.on("-k", "--key filename", String, "Shared key file") do |p|
+    $options[:keyfile] = p
+  end
+
 end.parse!
 
 if $options[:whoto].nil? then # debug = 1 if not already set
@@ -56,8 +61,16 @@ end
 # TODO handle failing here with exceptions
 config = YAML::load(open($options[:config]))
 
+# TODO this won't work at all because $options has symbols, config has strings
 unless config['options'].nil? then
-    $options.merge!(config['options'])
+    config['options'].each { |k,v|
+        $options[k.to_sym] = v
+    }
+end
+
+if $options[:keyfile] then
+    puts "loading secret key from #{$options[:keyfile]}"
+    $options[:secret_key] = File.open($options[:keyfile]).read.chomp
 end
 
 # make sure we always have a filters list
@@ -79,6 +92,21 @@ x = Thread.new do
 
 	    log "R #{line}"
 
+        if $options[:secret_key] then
+            log "K #{$options[:secret_key]}"
+            # check the line matches our secret shared key
+            match = "%/#{$options[:secret_key]}/%"
+            unless line.gsub!(%r{^#{match} }, '') then
+                log "line ignored because secret key doesn't match"
+                ignore = true
+            end
+            log "L #{line}"
+        else
+            # avoid information leakage due to misconfiguration
+            # if a line looks like it starts with a secret key, remove it
+            line.gsub!(%r{^%/.*?/% }, '')
+        end
+
         config['filters'].each { |f|
             if line =~ /#{f}/ then
                 if $options[:verbose] then
@@ -87,6 +115,7 @@ x = Thread.new do
                 ignore = true
             end
         }
+
 
         if ignore.nil? then
             log "sending it to #{$options[:whoto]}"

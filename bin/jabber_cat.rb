@@ -15,7 +15,7 @@ $options = {
 }
 
 OptionParser.new do |opts|
-  opts.banner = "Usage: twittermoo.rb [-p port] [-h host] [-w jid]"
+  opts.banner = "Usage: twittermoo.rb [-p port] [-h host] [-w jid] [-v] [-d N]"
 
   opts.on("-p", "--port N", Integer, "irccat port") do |p|
     $options[:port] = p

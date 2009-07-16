@@ -1,4 +1,6 @@
-require 'rubygems'
+#! /usr/bin/env ruby
+
+require 'rubygems' # should only do this if we require it
 require 'optparse'
 require 'socket'
 require 'xmpp4r'
@@ -6,72 +8,12 @@ require 'xmpp4r/framework/bot'
 require 'xmpp4r/muc/helper/simplemucclient'
 include Jabber
 
+require 'jabber_cat/options'
+
 def log(x)
     if $options[:verbose] then
         puts(*x)
     end
-end
-
-$options = {
-    :host => 'localhost',
-    :port => 9999,
-    :whoto => nil,
-    :config => ENV['HOME'] + '/.jabber_cat',
-    :verbose => nil,
-    :debug => 0,
-    :keyfile => nil,
-    :muc => nil
-}
-
-OptionParser.new do |opts|
-  opts.banner = "Usage: twittermoo.rb [-p port] [-h host] [-w jid] [-v] [-d N] [-m] [-k file]"
-
-  opts.on("-p", "--port N", Integer, "irccat port") do |p|
-    $options[:port] = p
-  end
-
-  opts.on("-h", "--host HOST", String, "host") do |p|
-    $options[:host] = p
-  end
-
-  opts.on("-w", "--whoto jid", String, "JID") do |p|
-    $options[:whoto] = p
-  end
-
-  opts.on("-c", "--config CONFIG", String, "config file") do |p|
-    $options[:config] = p
-  end
-
-  opts.on("-v", "--[no-]verbose", "Run verbosely") do |v|
-    $options[:verbose] = v
-  end
-
-  opts.on("-d", "--debug N", Integer, "debug level") do |p|
-    $options[:debug] = p
-  end
-
-  opts.on("-k", "--key filename", String, "Shared key file") do |p|
-    $options[:keyfile] = p
-  end
-
-  opts.on("-m", "--muc", "Treat the destination as a MUC") do |v|
-    $options[:muc] = v
-  end
-
-end.parse!
-
-if $options[:whoto].nil? then # debug = 1 if not already set
-    $options[:debug] = $options[:debug] || 1
-end
-
-# TODO handle failing here with exceptions
-config = YAML::load(open($options[:config]))
-
-# TODO this won't work at all because $options has symbols, config has strings
-unless config['options'].nil? then
-    config['options'].each { |k,v|
-        $options[k.to_sym] = v
-    }
 end
 
 if $options[:keyfile] then
@@ -80,8 +22,8 @@ if $options[:keyfile] then
 end
 
 # make sure we always have a filters list
-if config['filters'].nil? then
-    config['filters'] = []
+if $options['filters'].nil? then
+    $options['filters'] = []
 end
 
 if $options[:debug] > 0 then
@@ -116,7 +58,7 @@ x = Thread.new do
             line.gsub!(%r{^%/.*?/% }, '')
         end
 
-        config['filters'].each { |f|
+        $options['filters'].each { |f|
             if line =~ /#{f}/ then
                 if $options[:verbose] then
                     log "F #{f} =~ #{line}"
@@ -148,13 +90,18 @@ end
 #### JABBER
 
 # settings
-myJID = JID.new(config['myjid'])
-myPassword = config['mypass']
+myJID = JID.new($options['myjid'])
+myPassword = $options['mypass']
 
 log "creating jabber connection now"
 
 if $options[:debug] > 1 then
     Jabber::debug = true
+end
+
+if $options[:debug] > 2 then
+    x.join
+    exit
 end
 
 if $options[:muc] then # can't distinguish MUC JID from normal JID

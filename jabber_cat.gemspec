@@ -1,6 +1,6 @@
 spec = Gem::Specification.new do |s| 
   s.name = "jabber_cat"
-  s.version = "0.0.6"
+  s.version = "0.0.7"
   s.author = "Rob Partington"
   s.email = "zimpenfish@gmail.com"
   s.homepage = "http://rjp.github.com/jabber_cat"

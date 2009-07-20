@@ -1,4 +1,4 @@
-puts "included file"
+require 'yaml'
 
 $options = {
     :host => 'localhost',

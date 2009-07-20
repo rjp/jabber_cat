@@ -90,8 +90,8 @@ end
 #### JABBER
 
 # settings
-myJID = JID.new($options['myjid'])
-myPassword = $options['mypass']
+myJID = JID.new($options[:myjid])
+myPassword = $options[:mypass]
 
 log "creating jabber connection now"
 

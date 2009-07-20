@@ -9,8 +9,12 @@ spec = Gem::Specification.new do |s|
   s.files = ['bin/jabber_cat.rb', 'lib/jabber_cat/options.rb']
   s.require_path = "lib"
   s.test_files = []
-  s.has_rdoc = false
   s.add_dependency('xmpp4r', '>= 0.4')
   s.executables = ['jabber_cat.rb']
+  s.has_rdoc = true
+  s.extra_rdoc_files = [
+    "README.markdown"
+  ]
+  s.rubyforge_project = nil
 end
 

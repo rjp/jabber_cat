@@ -1,8 +1,9 @@
-#! /usr/bin/env ruby
+#! /usr/bin/ruby1.8
 
 require 'rubygems' # should only do this if we require it
 require 'optparse'
 require 'socket'
+require 'json'
 require 'xmpp4r'
 require 'xmpp4r/framework/bot'
 require 'xmpp4r/muc/helper/simplemucclient'
@@ -67,6 +68,11 @@ x = Thread.new do
             end
         }
 
+        if line =~ /^!!JSON/ then
+            payload = JSON.load(line[6..-1])
+            line = payload['data']
+            log "stripped JSON payload wrapper"
+        end
 
         if ignore.nil? then
             log "sending it to #{$options[:whoto]}"

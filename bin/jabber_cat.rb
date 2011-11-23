@@ -74,6 +74,8 @@ x = Thread.new do
             log "stripped JSON payload wrapper"
         end
 
+        line = line.gsub(/\n/, ' ')
+
         if ignore.nil? then
             log "sending it to #{$options[:whoto]}"
 	        if $options[:debug] > 0 then

@@ -37,7 +37,9 @@ x = Thread.new do
     loop do
         ignore = nil
         s = server.accept
-	  	line = s.gets.chomp.gsub(/\r/,'')
+        line = s.gets
+        next if line.nil?
+        line = line.chomp.gsub(/\r/,'')
         if $options[:verbose] then
             puts "[#{line}] received"
         end
